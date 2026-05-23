@@ -1,0 +1,29 @@
+name: Hourly Proxy Checker
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  update-proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tarik Kode Repository
+        uses: actions/checkout@v4
+
+      - name: Siapkan Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Jalankan Pengecekan Proxy
+        run: node checker.js
+
+      - name: Simpan dan Push Hasil
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add active_proxies.txt
+          git commit -m "Update proxy aktif" || echo "Tidak ada perubahan"
+          git push
