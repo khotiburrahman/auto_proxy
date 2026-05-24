@@ -2,25 +2,27 @@ const net = require('net');
 const fs = require('fs');
 
 const NAUTICA_URL = "https://raw.githubusercontent.com/FoolVPN-ID/Nautica/refs/heads/main/proxyList.txt";
-const TIMEOUT = 3000; // Batas waktu cek 3 detik per proxy
+const TIMEOUT = 3000;
 
 async function checkProxy(ip, port, country, org) {
   return new Promise((resolve) => {
     const socket = new net.Socket();
     socket.setTimeout(TIMEOUT);
+    const startTime = Date.now(); // Mulai hitung waktu (ping)
     
     socket.on('connect', () => {
+      const latency = Date.now() - startTime; // Hitung selisih waktu
       socket.destroy();
-      resolve({ ip, port, country, org, isAlive: true });
+      resolve({ ip, port, country, org, isAlive: true, latency });
     });
     
     socket.on('timeout', () => {
       socket.destroy();
-      resolve({ isAlive: false });
+      resolve({ isAlive: false, latency: Infinity });
     });
     
     socket.on('error', () => {
-      resolve({ isAlive: false });
+      resolve({ isAlive: false, latency: Infinity });
     });
     
     socket.connect(port, ip);
@@ -40,10 +42,26 @@ async function run() {
   const results = await Promise.all(promises);
   const activeProxies = results.filter(r => r.isAlive);
 
-  const outputData = activeProxies.map(r => `${r.ip},${r.port},${r.country},${r.org}`).join('\n');
+  // Mengelompokkan berdasarkan negara
+  const groupedProxies = {};
+  for (const prx of activeProxies) {
+    if (!groupedProxies[prx.country]) {
+      groupedProxies[prx.country] = [];
+    }
+    groupedProxies[prx.country].push(prx);
+  }
+  
+  // Mengurutkan dari ping terendah dan mengambil 10 terbaik
+  const finalProxies = [];
+  for (const country in groupedProxies) {
+    groupedProxies[country].sort((a, b) => a.latency - b.latency);
+    finalProxies.push(...groupedProxies[country].slice(0, 10));
+  }
+
+  const outputData = finalProxies.map(r => `${r.ip},${r.port},${r.country},${r.org}`).join('\n');
   fs.writeFileSync('active_proxies.txt', outputData);
   
-  console.log(`Sukses: ${activeProxies.length} proxy aktif tersimpan.`);
+  console.log(`Sukses: ${finalProxies.length} proxy aktif dan tercepat tersimpan.`);
 }
 
 run();
