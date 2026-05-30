@@ -1,0 +1,2 @@
+dash.cloudflare.com
+speedtest.net
