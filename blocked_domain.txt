@@ -2,6 +2,3 @@ speedtest.net
 cloudflare.com
 kaftakahira.my.id
 kaftakahira.biz.id
-shopee.com
-shopee.co.id
-seabank.co.id
