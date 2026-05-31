@@ -1,4 +1,0 @@
-speedtest.net
-cloudflare.com
-kaftakahira.my.id
-kaftakahira.biz.id
